@@ -52,6 +52,21 @@ Cloudflare Tunnel. Publish its stable URL in the maintainer's discovery JSON
 (`relay-service.json` documents the format); set `enabled` to `false` during
 maintenance.
 
+On macOS, `macos/install-public-fds-relay-owner.sh` installs the origin and
+discovery-updating tunnel as login services. The bundled tunnel runner removes
+inherited desktop proxy variables and forces HTTP/2 over TCP. This avoids the
+common combination where a proxy returns a `198.18.0.0/15` Fake-IP while
+QUIC/UDP never reaches a Cloudflare edge. Discovery is marked offline at
+startup and exit, and is only enabled after the new public URL passes an
+external `/health` probe. The probe uses DoH so a brief NXDOMAIN during Quick
+Tunnel creation is not retained by the host's negative DNS cache.
+
+If discovery says online but a `trycloudflare.com` hostname returns NXDOMAIN,
+that disposable Quick Tunnel has expired. Restart the updated tunnel runner;
+do not leave clients pointed at the stale URL. Repeated
+`Failed to dial a quic connection` messages with `198.18.*` identify the
+Fake-IP/QUIC failure handled by the HTTP/2 runner.
+
 The relay only builds and uploads the verified image. The owner's local Mi
 Home session still sends the final OTA command to their own AP01, after the
 app's explicit confirmation.

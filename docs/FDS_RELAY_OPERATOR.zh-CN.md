@@ -87,6 +87,12 @@ curl --noproxy '*' http://127.0.0.1:8790/health
 ./macos/install-public-fds-relay-owner.sh /private/path/ap01-1.0.2_0031.bin
 ```
 
+随附的隧道脚本会清除桌面代理环境变量，并强制使用 HTTP/2/TCP，避免 Clash 等
+代理的 Fake-IP 与 QUIC/UDP 组合导致 `cloudflared` 进程仍在、实际隧道却无法连通。
+每次启动和退出时 discovery 会先标记为离线；只有新的公开 URL 通过外网
+`/health` 检查后才会重新标记在线。健康检查使用 DoH，避免刚创建域名的短暂
+`NXDOMAIN` 被本机 DNS 负缓存。
+
 公开 HTTPS 地址写入发布维护者的 Relay discovery JSON（仓库中的
 `relay-service.json` 是格式示例；官方客户端当前从维护者公开 Gist 读取）：
 
@@ -121,6 +127,10 @@ CUKTECH_FDS_RELAY_ALLOW_HTTP=1 python3 ap01_fds_relay_client.py \
 ## 故障分流
 
 - `共享部署服务正在维护`：发现文件未启用或公开入口下线；
+- Gist 显示在线但 `trycloudflare.com` 返回 `NXDOMAIN`：该 Quick Tunnel 已失效；
+  更新并重启隧道脚本，不要让客户端继续使用旧 URL；
+- 日志持续出现 `Failed to dial a quic connection` 与 `198.18.*`：代理 Fake-IP
+  或网络阻断了 QUIC/UDP；使用随附脚本的 HTTP/2 模式；
 - `申请过于频繁`：等待 `Retry-After`，不要绕过限流；
 - `服务端构建或上传失败`：检查服务端米家登录态、网关、RISC-V 工具链和 FDS
   限流；日志不会包含签名参数；
