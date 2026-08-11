@@ -43,8 +43,8 @@ if [[ ! -f artifacts/ap01-mode ]]; then
     print -r -- "quota" > artifacts/ap01-mode
 fi
 
-echo "[4/5] 安装登录自动启动 Bridge…"
-./macos/install-launch-agent.sh
+# echo "[4/5] 安装登录自动启动 Bridge…"
+# ./macos/install-launch-agent.sh
 
 if [[ "${CUKTECH_SETUP_DRY_RUN:-0}" == "1" ]]; then
     echo "[5/5] 测试模式：环境与 LaunchAgent 配置已验证，未启动服务。"
